@@ -39,6 +39,9 @@
         }
     }
     if (active_page == 'thread' || active_page == 'index') {
+    	if (localStorage.disable_image_spoiler === undefined) {
+    		localStorage.disable_image_spoiler = 'true';
+    	}
         if (window.Options && Options.get_tab('general')) {
             Options.extend_tab('general', '<label id="disable-spoiler"><input type="checkbox">' + _(' Disable image spoiler where possible') + '</label>');
 
