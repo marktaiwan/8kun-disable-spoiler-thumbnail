@@ -1,6 +1,6 @@
 /*
     8chan disable spoiler thumbnail
-    Version 1.0
+    Version 1.0.1
 */
 (function ($) {
     'use strict';
