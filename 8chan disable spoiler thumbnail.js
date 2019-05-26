@@ -1,65 +1,55 @@
 /*
-    8chan disable spoiler thumbnail
-    Version 1.0.1
+  8chan disable spoiler thumbnail
+  Version 1.0.2
 */
 (function ($) {
-    'use strict';
-    function unspoilerThumbnail() {
-        var $file = $(this);
+'use strict';
 
-        if ($file.attr('src') == `/static/assets/${window.board_name}/spoiler.png` ||
-            $file.attr('src') == '/static/spoiler.png') {
+function unspoilerThumbnail(postImage) {
+  if (postImage.src.endsWith(`/static/assets/${window.board_name}/spoiler.png`)
+    || postImage.src.endsWith('/static/spoiler.png')) {
+    const fileURL = postImage.closest('div.file').querySelector('.fileinfo>a[title]').href;
+    if (fileURL === undefined || fileURL.indexOf('/file_store/') == -1) return;
 
-            var spoilerImg = this.src;
-            var fileURL = $file.parent().parent().find('.fileinfo>a[title]').first().prop('href');
-            if (fileURL === undefined || fileURL.indexOf('/file_store/') == -1) return;
-            var str = fileURL.split('/file_store/');
+    const spoilerImg = postImage.src;
+    const thumbURL = fileURL.replace('/file_store/', '$&thumb/').replace((/(webm|mp4)$/), 'jpg');
 
-            if (str[1].endsWith('webm')) {
-                str[1] = str[1].substring(0 , str[1].lastIndexOf('webm')) + 'jpg';
-            }
-            if (str[1].endsWith('mp4')) {
-                str[1] = str[1].substring(0 , str[1].lastIndexOf('mp4')) + 'jpg';
-            }
+    postImage.onerror = () => postImage.src = spoilerImg;
+    postImage.onload = () => {
+      const multifile = postImage.closest('.multifile');
 
-            var thumbURL = str[0] + '/file_store/thumb/' + str[1];
+      postImage.style.width = `${postImage.naturalWidth}px`;
+      postImage.style.height = `${postImage.naturalHeight}px`;
 
-            this.onerror = function () {
-                $file.prop('src', spoilerImg);
-            };
+      if (multifile) {
+        multifile.style.width = `${postImage.naturalWidth + 40}px`;
+      }
+    };
 
-            this.onload = function () {
-                    $file.css({
-                        'width': $file.prop('naturalWidth'),
-                        'height': $file.prop('naturalHeight')
-                    });
-                    $file.parent().parent('.multifile').css('width', ($file.prop('naturalWidth') + 40) + 'px');
-            }
-            this.src = thumbURL;
-        }
+    postImage.src = thumbURL;
+  }
+}
+
+if (active_page == 'thread' || active_page == 'index') {
+  if (localStorage.disable_image_spoiler === undefined) {
+    localStorage.disable_image_spoiler = 'true';
+  }
+  if (window.Options && Options.get_tab('general')) {
+    Options.extend_tab('general', '<label id="disable-spoiler"><input type="checkbox"> Disable image spoiler where possible</label>');
+
+    document.querySelector('#disable-spoiler>input').addEventListener('change', () => {
+      localStorage.disable_image_spoiler = (localStorage.disable_image_spoiler === 'true') ? 'false' : 'true';
+    });
+    if (localStorage.disable_image_spoiler === 'true') {
+      document.querySelector('#disable-spoiler>input').setAttribute('checked', true);
     }
-    if (active_page == 'thread' || active_page == 'index') {
-    	if (localStorage.disable_image_spoiler === undefined) {
-    		localStorage.disable_image_spoiler = 'true';
-    	}
-        if (window.Options && Options.get_tab('general')) {
-            Options.extend_tab('general', '<label id="disable-spoiler"><input type="checkbox">' + _(' Disable image spoiler where possible') + '</label>');
+  }
+  if (localStorage.disable_image_spoiler === 'true') {
+    document.querySelectorAll('.post-image').forEach(unspoilerThumbnail);
+    $(document).on('new_post', function (e, post) {
+      post.querySelectorAll('.post-image').forEach(unspoilerThumbnail);
+    });
+  }
+}
 
-            $('#disable-spoiler>input').on('change', function() {
-                localStorage.disable_image_spoiler = (localStorage.disable_image_spoiler === 'true') ? 'false' : 'true';
-            });
-            if (localStorage.disable_image_spoiler === 'true') {
-                $('#disable-spoiler>input').attr('checked','checked');
-            }
-        }
-        if (localStorage.disable_image_spoiler === 'true') {
-            $(document).ready(function () {
-                $('.post-image').each(unspoilerThumbnail);
-            });
-            $(document).on('new_post', function (e, post) {
-                $(post).find('.post-image').each(unspoilerThumbnail);
-            });
-        }
-    }
-
-})(window.jQuery)
+})(window.jQuery);
