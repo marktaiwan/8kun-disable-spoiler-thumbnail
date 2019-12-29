@@ -2,7 +2,7 @@
   8chan disable spoiler thumbnail
   Version 1.0.2
 */
-(function ($) {
+(function (jQuery) {
 'use strict';
 
 function unspoilerThumbnail(postImage) {
@@ -29,27 +29,35 @@ function unspoilerThumbnail(postImage) {
     postImage.src = thumbURL;
   }
 }
+function main() {
+  if (window.active_page == 'thread' || window.active_page == 'index') {
+    if (localStorage.disable_image_spoiler === undefined) {
+      localStorage.disable_image_spoiler = 'true';
+    }
+    if (window.Options && Options.get_tab('general')) {
+      Options.extend_tab('general', '<label id="disable-spoiler"><input type="checkbox"> Disable image spoiler where possible</label>');
 
-if (active_page == 'thread' || active_page == 'index') {
-  if (localStorage.disable_image_spoiler === undefined) {
-    localStorage.disable_image_spoiler = 'true';
-  }
-  if (window.Options && Options.get_tab('general')) {
-    Options.extend_tab('general', '<label id="disable-spoiler"><input type="checkbox"> Disable image spoiler where possible</label>');
-
-    document.querySelector('#disable-spoiler>input').addEventListener('change', () => {
-      localStorage.disable_image_spoiler = (localStorage.disable_image_spoiler === 'true') ? 'false' : 'true';
-    });
+      document.querySelector('#disable-spoiler>input').addEventListener('change', () => {
+        localStorage.disable_image_spoiler = (localStorage.disable_image_spoiler === 'true') ? 'false' : 'true';
+      });
+      if (localStorage.disable_image_spoiler === 'true') {
+        document.querySelector('#disable-spoiler>input').setAttribute('checked', true);
+      }
+    }
     if (localStorage.disable_image_spoiler === 'true') {
-      document.querySelector('#disable-spoiler>input').setAttribute('checked', true);
+      document.querySelectorAll('.post-image').forEach(unspoilerThumbnail);
+      jQuery(document).on('new_post', function (e, post) {
+        post.querySelectorAll('.post-image').forEach(unspoilerThumbnail);
+      });
     }
   }
-  if (localStorage.disable_image_spoiler === 'true') {
-    document.querySelectorAll('.post-image').forEach(unspoilerThumbnail);
-    $(document).on('new_post', function (e, post) {
-      post.querySelectorAll('.post-image').forEach(unspoilerThumbnail);
-    });
+}
+function onReady(fn) {
+  if (document.readyState == 'loading') {
+    window.addEventListener('DOMContentLoaded', fn);
+  } else {
+    fn();
   }
 }
-
+onReady(main);
 })(window.jQuery);
